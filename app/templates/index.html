@@ -14,7 +14,7 @@
         </header>
         
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-9">
                 <div class="camera-container">
                     <div id="camera-guides">
                         <!-- Guides will be drawn on this canvas -->
@@ -43,13 +43,49 @@
                     <button id="switch-camera" class="btn btn-secondary">Switch Camera</button>
                 </div>
                 
-                <div class="mobile-instructions mt-2 text-center small">
+                <div class="mobile-instructions mt-3 text-center">
                     <p id="mobile-tip">On mobile devices, use "Switch Camera" to toggle between front and back cameras</p>
+                    
+                    <div class="camera-help mt-3 alert alert-info">
+                        <h5>Camera Troubleshooting</h5>
+                        <ul class="text-start small">
+                            <li>If no camera is found, make sure your device has a camera connected</li>
+                            <li>Allow camera permissions when prompted by your browser</li>
+                            <li>On mobile, ensure the app has permission to use the camera in your device settings</li>
+                            <li>If using Chrome, verify camera access at chrome://settings/content/camera</li>
+                            <li>Close other applications that might be using your camera</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="browser-compatibility mt-3 alert alert-warning">
+                        <h5>Browser Compatibility</h5>
+                        <p class="text-start small">For best results, we recommend using one of these browsers:</p>
+                        <ul class="text-start small">
+                            <li>Google Chrome (latest version)</li>
+                            <li>Mozilla Firefox (latest version)</li>
+                            <li>Microsoft Edge (latest version)</li>
+                            <li>Safari 14.1 or newer</li>
+                        </ul>
+                        <p class="text-start small">
+                            <strong>If you see "Cannot read properties of undefined" error:</strong> Please try using a different 
+                            browser, preferably Chrome or Firefox. Your current browser may have limited camera API support.
+                        </p>
+                        <p class="text-start small">
+                            <strong>Note:</strong> This application requires a secure context (HTTPS) to access the camera.
+                            If you're accessing this locally, use Chrome or Firefox with localhost.
+                        </p>
+                    </div>
                 </div>
             </div>
             
-            <div class="col-md-4">
-                <div class="metrics-panel">
+            <div class="col-md-3">
+                <!-- Status message visible at the top with enhanced styling -->
+                <div class="status-message alert alert-info" id="status-message" style="margin-bottom: 15px;">
+                    <p class="mb-0"><strong>Status:</strong> Click "Start Camera" to begin</p>
+                </div>
+                
+                <!-- Hide Quality Metrics UI but keep elements for JavaScript to work -->
+                <div class="metrics-panel" style="display: none;">
                     <h3>Quality Metrics</h3>
                     <div class="metric">
                         <label>Lighting Quality:</label>
@@ -75,9 +111,7 @@
                         <span id="iqi-value">0/100</span>
                     </div>
                     
-                    <div class="status-message" id="status-message">
-                        <p>Click "Start Camera" to begin</p>
-                    </div>
+                    <!-- Removed status message from here -->
                 </div>
                 
                 <div class="captures-panel">
