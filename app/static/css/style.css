@@ -7,7 +7,8 @@ body {
 .camera-container {
     position: relative;
     width: 100%;
-    height: 480px;
+    height: 0;
+    padding-bottom: 177.78%; /* 16:9 -> 9:16 aspect ratio (9/16 = 0.5625, inverted is 16/9 = 1.7778) */
     background-color: #000;
     margin-bottom: 20px;
     border-radius: 10px;
@@ -16,9 +17,17 @@ body {
 }
 
 #camera-view {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* Style for front camera view (will be applied via JavaScript) */
+#camera-view.front-camera {
+    transform: scaleX(-1); /* Mirror the video horizontally for front camera */
 }
 
 #camera-guides {
@@ -29,6 +38,11 @@ body {
     height: 100%;
     z-index: 10;
     pointer-events: none;
+}
+
+/* If camera view is mirrored, guides should also be mirrored */
+#camera-view.front-camera + #camera-guides {
+    transform: scaleX(-1);
 }
 
 #guides-canvas {
@@ -147,29 +161,51 @@ body {
 }
 
 .captured-image {
-    width: calc(50% - 5px);
-    position: relative;
+    margin-bottom: 20px;
     border: 1px solid #ddd;
-    border-radius: 5px;
+    border-radius: 8px;
     overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .captured-image img {
     width: 100%;
-    height: auto;
     display: block;
 }
 
-.captured-image .image-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #fff;
-    padding: 5px;
+.image-info {
+    padding: 10px;
+    font-size: 14px;
+}
+
+.iqi-info {
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.detection-info {
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.product-list {
+    margin-top: 8px;
+}
+
+.product-list ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+}
+
+.location-info {
     font-size: 12px;
-    text-align: center;
+    color: #666;
+    margin-top: 8px;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
 }
 
 /* Flash Effect */
@@ -217,10 +253,19 @@ body {
     display: flex;
 }
 
+/* Additional CSS for responsive layouts */
+@media (min-width: 992px) {
+    /* On desktop, don't make it too tall */
+    .camera-container {
+        padding-bottom: 80%;
+        max-height: 800px;
+    }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 992px) {
     .camera-container {
-        height: 360px;
+        padding-bottom: 150%; /* Slightly less tall on tablets */
     }
     
     .captured-image {
@@ -230,7 +275,7 @@ body {
 
 @media (max-width: 768px) {
     .camera-container {
-        height: 300px;
+        padding-bottom: 177.78%; /* Full 9:16 ratio on phones */
     }
     
     .camera-controls button {
