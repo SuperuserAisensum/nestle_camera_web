@@ -505,13 +505,21 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Disable the capture button during processing
             captureBtn.disabled = true;
-            updateStatus('Processing image...', 'info');
+            updateStatus('Analyzing image...', 'info');
             
             // Show flash effect
             flash.style.display = 'block';
-            setTimeout(() => {
-                flash.style.display = 'none';
-            }, 500);
+            
+            // Show detecting process indicator
+            loadingIndicator.classList.add('active');
+            const captureText = document.createElement('div');
+            captureText.className = 'capture-text';
+            captureText.textContent = 'DETECTING PRODUCTS...';
+            loadingIndicator.appendChild(captureText);
+            
+            // Give time for the flash to be visible
+            await new Promise(resolve => setTimeout(resolve, 300));
+            flash.style.display = 'none';
             
             // Draw the current frame to the canvas
             const context = cameraCanvas.getContext('2d');
@@ -519,6 +527,58 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Get the image data as base64
             const imageData = cameraCanvas.toDataURL('image/jpeg', 0.9);
+            
+            // First check if there are products in the image
+            const detectResponse = await fetch('/detect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData })
+            });
+            
+            if (!detectResponse.ok) {
+                throw new Error(`Server returned ${detectResponse.status}: ${detectResponse.statusText}`);
+            }
+            
+            const detectResult = await detectResponse.json();
+            
+            // Update text to show we're now processing the image
+            if (captureText) {
+                captureText.textContent = 'PROCESSING IMAGE...';
+            }
+            
+            // If no products detected, show notification modal and wait for user decision
+            if (!detectResult.has_products) {
+                // Hide loading indicator temporarily
+                loadingIndicator.classList.remove('active');
+                
+                // Create a promise that will resolve when the user closes the modal
+                await new Promise(resolve => {
+                    const noProductsModal = new bootstrap.Modal(document.getElementById('noProductsModal'));
+                    const tryAgainBtn = document.getElementById('modalTryAgainBtn');
+                    
+                    // Set up event handler for the Try Again button
+                    tryAgainBtn.onclick = () => {
+                        noProductsModal.hide();
+                        resolve();
+                    };
+                    
+                    // Also handle modal close via X button or clicking outside
+                    document.getElementById('noProductsModal').addEventListener('hidden.bs.modal', () => {
+                        resolve();
+                    }, { once: true });
+                    
+                    // Show the modal
+                    noProductsModal.show();
+                });
+                
+                // Always try again when no products are detected
+                updateStatus('No products detected. Please aim at products and try again.', 'warning');
+                // Re-enable capture button before returning
+                captureBtn.disabled = false;
+                return;
+            }
             
             // Check if we have location data
             if (!currentPosition) {
@@ -568,13 +628,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStatus('Image captured and saved successfully!', 'success');
                 // Add the image to the gallery with detection data
                 addCapturedImage(result.filename, latestMetrics, result.detection);
+            } else if (result.error) {
+                updateStatus(`${result.error}`, 'warning');
             } else {
-                updateStatus(`Error: ${result.error || 'Unknown error'}`, 'error');
+                updateStatus(`Error: Unknown error`, 'error');
             }
         } catch (error) {
             console.error('Error capturing image:', error);
             updateStatus(`Error: ${error.message}`, 'error');
         } finally {
+            // Remove the capture text and hide the loading indicator
+            const captureText = loadingIndicator.querySelector('.capture-text');
+            if (captureText) {
+                captureText.remove();
+            }
+            loadingIndicator.classList.remove('active');
+            
             // Re-enable the capture button
             captureBtn.disabled = false;
         }
