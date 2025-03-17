@@ -28,7 +28,7 @@ OWLV2_PROMPTS = ["bottle", "tetra pak", "cans", "carton drink"]
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'nestle_chiller_camera'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'captured_images')
-app.config['SERVER_URL'] = os.getenv('SERVER_URL', 'http://192.168.100.8:5000/')  # Add server URL config
+app.config['SERVER_URL'] = os.getenv('SERVER_URL', 'http://108.137.198.68:5000/')  # Add server URL config
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize Roboflow model
