@@ -167,6 +167,43 @@ def process_image(image_path):
         traceback.print_exc()
         return None, None
 
+# New function to detect objects in base64 image before capture
+def detect_objects_in_base64(image_data):
+    """
+    Detect objects in a base64 image without saving it.
+    Returns detection data and a boolean indicating if products were detected.
+    """
+    try:
+        # Decode base64 image
+        image_data = image_data.split(',')[1]
+        image_bytes = base64.b64decode(image_data)
+        
+        # Create a temporary file to save the image
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+            temp_file.write(image_bytes)
+            temp_path = temp_file.name
+        
+        try:
+            # Use the existing detection logic
+            _, detection_data = process_image(temp_path)
+            
+            if detection_data is None:
+                return {"total_nestle": 0, "total_unclassified": 0}, False
+            
+            # Check if any products were detected
+            has_products = (detection_data["total_nestle"] > 0 or detection_data["total_unclassified"] > 0)
+            
+            return detection_data, has_products
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
+    except Exception as e:
+        print(f"Error detecting objects in base64 image: {e}")
+        traceback.print_exc()
+        return {"total_nestle": 0, "total_unclassified": 0}, False
+
 class ChillerImageProcessor:
     def __init__(self):
         self.focal_length = 1200  # Default focal length for angle calculations
@@ -461,6 +498,33 @@ def analyze_image():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/detect', methods=['POST'])
+def detect_objects():
+    """
+    Endpoint: receives base64 image JSON,
+    returns object detection results in JSON.
+    """
+    try:
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image provided'}), 400
+
+        # Detect objects in the image
+        detection_data, has_products = detect_objects_in_base64(data['image'])
+        
+        return jsonify({
+            'success': True, 
+            'detection': detection_data,
+            'has_products': has_products
+        })
+    except ValueError as e:
+        # Decoding / image conversion error
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        print(f"Error detecting objects: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/save', methods=['POST'])
 def save_image():
     """
@@ -472,6 +536,18 @@ def save_image():
         if not data or 'image' not in data or 'metrics' not in data:
             return jsonify({'error': 'Missing image or metrics data'}), 400
 
+        # Verify that image contains products - always enforce this check
+        detection_data, has_products = detect_objects_in_base64(data['image'])
+        
+        # If no products detected, return error
+        if not has_products:
+            return jsonify({
+                'success': False,
+                'error': 'No Nestlé or competitor products detected in the image',
+                'detection': detection_data,
+                'has_products': False
+            }), 200  # Use 200 to ensure client gets the message
+        
         # Get location data if available
         location = data.get('location', {})
         
